@@ -4,6 +4,8 @@ import sys
 import os
 from datetime import datetime
 import traceback
+import pandas as pd
+import numpy as np
 
 # Add homeharvest to path
 sys.path.insert(0, os.path.dirname(__file__))
@@ -149,7 +151,15 @@ class handler(BaseHTTPRequestHandler):
                 print(f"[Search] Calculating investment scores...")
                 properties = rank_by_investment_potential(properties)
 
-            # Convert to dict
+            # Convert to dict with datetime handling
+            # Convert datetime columns to ISO format strings
+            for col in properties.columns:
+                if pd.api.types.is_datetime64_any_dtype(properties[col]):
+                    properties[col] = properties[col].dt.strftime('%Y-%m-%dT%H:%M:%S').replace('NaT', None)
+
+            # Replace NaN with None for JSON serialization
+            properties = properties.replace({np.nan: None})
+
             props_list = properties.to_dict('records')
 
             # Calculate market statistics
